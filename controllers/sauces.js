@@ -60,6 +60,7 @@ exports.putSauce = (req, res, next) => {
     let sauceObj = JSON.parse(req.body.sauce); // Récupération des informations de la sauce
     sauces.findOne({_id: req.params.id},) 
     .then((sauce) => {
+      if(sauce.userId === sauceObj.userId){ // Si l'utilisateur est le créateur de la sauce alors on accepte la modification
         const filename = sauce.imageUrl.split('/images/')[1];
         fs.unlink(`images/${filename}`, () => {  // Suppression de l'ancienne image
           sauces.updateOne({_id: req.params.id}, {
@@ -74,10 +75,17 @@ exports.putSauce = (req, res, next) => {
           .then(() => res.status(200).json({ message: "Sauce modifiée" })) // Si pas d'erreur on renvoi un message 
           .catch(error => res.status(400).json({ error })); // Renvoi d'une erreur en cas de problème
         });
+      }
+      else{ // Sinon on renvoi une erreur 
+        res.status(403).json({ message : "Vous n'êtes pas autorisé à modifier cette sauce !"});
+      }
     })
     .catch(error => res.status(500).json({ error }));
   }
   else{
+    sauces.findOne({_id: req.params.id},)
+    .then((sauce) => {
+      if(sauce.userId === req.body.userId){
         sauces.updateOne({_id: req.params.id}, { // Si l'image n'a pas été modifié 
           userId: req.body.userId,
           name: req.body.name,
@@ -88,7 +96,13 @@ exports.putSauce = (req, res, next) => {
           heat: req.body.heat
         })
         .then(() => res.status(200).json({ message: "Sauce modifiée" }))
-        .catch(error => res.status(400).json({ error}));    
+        .catch(error => res.status(400).json({ error}));   
+      }
+      else{
+        res.status(403).json({ message : "Vous n'êtes pas autorisé à modifier cette sauce !"});
+      }
+    })
+    .catch(error => res.status(500).json({ error }));    
   }
 }; // Fin fonction putSauce
 
